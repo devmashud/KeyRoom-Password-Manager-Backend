@@ -39,3 +39,14 @@ export const updatePassword = async (req, res) => {
 
 }
 
+export const deletPassword= async(req, res)=>{
+    const {id} = req.params
+
+    const deleted = await Password.findByIdAndDelete(id)
+    if(!deleted){
+        return res.status(400).json({message: "Not found"})
+    }
+    res.json({message: "Deleted SuccesFull"})
+
+
+}
