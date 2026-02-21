@@ -1,4 +1,5 @@
 import Password from "../model/Password.js";
+import bcrypt from "bcrypt";
 
 export const createPassword = async (req, res) => {
   try {
@@ -23,12 +24,21 @@ export const createPassword = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
+    const hashedPassword = await bcrypt.hash(passwordTrimmed, 10);
     const newItem = await Password.create({
-      site: site.trim(),
-      username: username.trim(),
-      password,
+      site: siteTrimmed,
+      username: usernameTrimmed,
+      password: hashedPassword,
     });
-    res.status(201).json(newItem);
+
+    const safeItem = {
+      _id: newItem._id,
+      site: newItem.site,
+      username: newItem.username,
+      createdAt: newItem.createdAt,
+      updatedAt: newItem.updatedAt,
+    };
+    res.status(201).json(safeItem);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
@@ -36,22 +46,33 @@ export const createPassword = async (req, res) => {
 };
 
 export const getPassword = async (req, res) => {
-  const items = await Password.find().sort({ createdAt: 1 });
+  const items = await Password.find()
+    .sort({ createdAt: 1 })
+    .select("-password");
   res.json(items);
 };
 
 export const updatePassword = async (req, res) => {
   console.log("UPDATE HIT", req.params.id, req.body);
-
+  
   const { id } = req.params;
   const updated = await Password.findByIdAndUpdate(id, req.body, {
     returnDocument: "after",
   });
+  //update password er modde o hash korte hobe
 
   if (!updated) {
     return res.status(404).json({ message: "Not Found" });
   }
-  res.json(updated);
+  const safeItem = {
+  _id: updated._id,
+  site: updated.site,
+  username: updated.username,
+  createdAt: updated.createdAt,
+  updatedAt: updated.updatedAt,
+};
+
+res.json(safeItem);
   console.log(updated);
 };
 
